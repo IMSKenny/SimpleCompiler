@@ -1,5 +1,7 @@
 # Виртуальная машина
 
+import error
+
 STOP = -1
 ADD = -2
 SUB = -3
@@ -29,30 +31,87 @@ MEM_SIZE = 8 * 1024
 M = [STOP] * MEM_SIZE
 
 
-def Run:
-    pc = 0
-    sp = MEM_SIZE
+def Run():
+    PC = 0
+    SP = MEM_SIZE
     while True:
-        cmd = M[pc]
-        pc += 1
+        cmd = M[PC]
+        PC += 1
         if cmd >= 0:
-            sp -= 1
-            M[sp] = cmd
+            SP -= 1
+            M[SP] = cmd
         elif cmd == ADD:
-            sp += 1
-            M[sp] = M[sp] + M[sp - 1]
+            SP += 1
+            M[SP] = M[SP] + M[SP - 1]
         elif cmd == SUB:
-            sp += 1
-            M[sp] = M[sp] - M[sp - 1]
+            SP += 1
+            M[SP] = M[SP] - M[SP - 1]
         elif cmd == MULT:
-            sp += 1
-            M[sp] = M[sp] * M[sp - 1]
+            SP += 1
+            M[SP] = M[SP] * M[SP - 1]
         elif cmd == DIV:
-            sp += 1
-            M[sp] = M[sp] // M[sp - 1]
+            SP += 1
+            M[SP] = M[SP] // M[SP - 1]
         elif cmd == MOD:
-            sp += 1
-            M[sp] = M[sp] % M[sp - 1]
+            SP += 1
+            M[SP] = M[SP] % M[SP - 1]
         elif cmd == NEG:
-            M[sp] = -M[sp]
+            M[SP] = -M[SP]
+        elif cmd == LOAD:
+            M[SP] = M[M[SP]]
+        elif cmd == SAVE:
+            M[M[SP + 1]] = M[SP]
+            SP += 2
+        elif cmd == DUP:
+            M[SP - 1] = M[SP]
+            SP -= 1
+        elif cmd == DROP:
+            SP += 1
+        elif cmd == SWAP:
+            M[SP], M[SP + 1] = M[SP + 1], M[SP]
+        elif cmd == OVER:
+            SP -= 1
+            M[SP] = M[SP + 2]
+        elif cmd == GOTO:
+            PC = M[SP]
+            SP += 1
+        elif cmd == IFEQ:
+            if M[SP + 2] == M[SP + 1]:
+                PC = M[SP]
+            SP += 3
+        elif cmd == IFNE:
+            if M[SP + 2] != M[SP + 1]:
+                PC = M[SP]
+            SP += 3
+        elif cmd == IFLT:
+            if M[SP + 2] < M[SP + 1]:
+                PC = M[SP]
+            SP += 3
+        elif cmd == IFLE:
+            if M[SP + 2] <= M[SP + 1]:
+                PC = M[SP]
+            SP += 3
+        elif cmd == IFGT:
+            if M[SP + 2] > M[SP + 1]:
+                PC = M[SP]
+            SP += 3
+        elif cmd == IFGE:
+            if M[SP + 2] >= M[SP + 1]:
+                PC = M[SP]
+            SP += 3
+        elif cmd == IN:
+            SP -= 1
+            try:
+                M[SP] = int(input('?'))
+            except:
+                error.Error('Неправильный ввод')
+        elif cmd == OUT:
+            print(f"{M[SP] + 1}: {M[SP]}", end='')
+            SP += 2
+        elif cmd == LN:
+            print()
+        elif cmd == STOP:
+            break
+        else:
+            error.Error('Недопустимая команда')
 

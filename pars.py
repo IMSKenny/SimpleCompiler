@@ -20,7 +20,7 @@ def TestText():
 def TestScan():
     nextCh()
     nextLex()
-    n = 0;
+    n = 0
     while lex() != Lex.EOT:
         n += 1
         print(lex())
@@ -94,7 +94,7 @@ def ConstDecl():
 
 
 def Type():
-    check(Lex.NAME);
+    check(Lex.NAME)
     x = table.find(scan.name())
     if type(x) != items.Type:
         expect("имя типа")
@@ -258,9 +258,9 @@ def Procedure(x):
         Variable()
     elif x.name == "Out.Int":
         # Out.Int(e, f)
-        IntExpr();
+        IntExpr()
         skip(Lex.COMMA)
-        IntExpr();
+        IntExpr()
     elif x.name == "Out.Ln":
         pass
     else:
