@@ -11,7 +11,12 @@ import enum
 class Types(enum.Enum):
     Bool, Int = range(2)
 
+def indent(n):
+    return ' '*4*n
 
+def ln()
+    return '\n'
+    
 def TestText():
     while ch() != chEOT:
         nextCh()
@@ -393,6 +398,7 @@ def Statement():
 def StatSeq():
     Statement()
     while lex() == Lex.SEMI:
+        textPy += ln() + indent(n)
         nextLex()
         Statement()
 
