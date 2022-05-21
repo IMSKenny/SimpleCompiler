@@ -21,7 +21,9 @@ def indent(n):
     return ' '*4*n
 
 def lnIndent(n):
-    return '\n' + ' '*4*n
+    if n == 1:
+        return '\n'
+    return '\n' + ' '*4*(n - 1)
     
 def TestText():
     while ch() != chEOT:
@@ -135,8 +137,8 @@ def VarDecl():
         table.new(items.Var(scan.name(), Types.Int))
         nextLex()
     skip(Lex.COLON)
-    textPy += lnIndent(n)                                        #
-    textPy += lnIndent(n)                                        #
+    #textPy += lnIndent(n)                                        #
+    #textPy += lnIndent(n)                                        #
     Type()
 
 
@@ -409,6 +411,8 @@ def IfStatement():
     BoolExpr()
     skip(Lex.THEN)
     textPy += ':'                #
+    n += 1
+    textPy += lnIndent(n)
     StatSeq()
     while lex() == Lex.ELSIF:
         textPy += 'elif'         #
@@ -416,9 +420,13 @@ def IfStatement():
         BoolExpr()
         skip(Lex.THEN)
         textPy += ':'            #
+        n += 1
+        #textPy += lnIndent(n)
         StatSeq()
     if lex() == Lex.ELSE:
         textPy += 'else:'        #
+        n += 1
+        #textPy += lnIndent(n)
         nextLex()
         StatSeq()
     skip(Lex.END)
@@ -441,13 +449,15 @@ def BoolExpr():
 #       ПослОператоров
 # END
 def WhileStatement():
-    global textPy
+    global textPy, n
 
     skip(Lex.WHILE)
     textPy += 'while '            #
     BoolExpr()
     skip(Lex.DO)
     textPy += ':'                 #
+    n += 1
+    textPy += lnIndent(n)
     StatSeq()
     skip(Lex.END)
 
@@ -489,7 +499,7 @@ def StatSeq():
         nextLex()
         Statement()
     n -= 1                              #
-    textPy += lnIndent(n)               #
+    #textPy += lnIndent(n)               #
 
 
 # Модуль =
