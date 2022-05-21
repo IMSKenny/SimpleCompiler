@@ -223,6 +223,7 @@ def AssStatement(x):
     # x - переменная
     skip(Lex.NAME)
     skip(Lex.ASS)
+    textPy += ' = '                                        //
     T = Expression()
     if x.typ != T:
         ctxError("Несоответсвие типов при присваивании")
@@ -334,15 +335,20 @@ def AssOrCall():
 #     END
 def IfStatement():
     skip(Lex.IF)
+    textPy += 'if '              //
     BoolExpr()
     skip(Lex.THEN)
+    textPy += ':'                //
     StatSeq()
     while lex() == Lex.ELSIF:
+        textPy += 'elif'         //
         nextLex()
         BoolExpr()
         skip(Lex.THEN)
+        textPy += ':'            //
         StatSeq()
     if lex() == Lex.ELSE:
+        textPy += 'else:'         //
         nextLex()
         StatSeq()
     skip(Lex.END)
@@ -356,6 +362,7 @@ def TestBool(T):
 def BoolExpr():
     T = Expression()
     TestBool(T)
+    textPy += lex()               //
 
 
 # WHILE Выраж DO
@@ -363,8 +370,10 @@ def BoolExpr():
 # END
 def WhileStatement():
     skip(Lex.WHILE)
+    textPy += 'while '            //
     BoolExpr()
     skip(Lex.DO)
+    textPy += ':'                 //
     StatSeq()
     skip(Lex.END)
 
@@ -396,11 +405,15 @@ def Statement():
 #    Оператор {";"
 #    Оператор }.
 def StatSeq():
+    n += 1                              //
+    textPy += ln() + indent(n)          // под вопросом
     Statement()
     while lex() == Lex.SEMI:
-        textPy += ln() + indent(n)
+        textPy += ln() + indent(n)      //
         nextLex()
         Statement()
+    n -= 1                              //
+    textPy += ln() + indent(n)          //
 
 
 # Модуль =
