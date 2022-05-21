@@ -292,10 +292,14 @@ def Procedure(x):
     elif x.name == "In.Int":
         Variable()
     elif x.name == "Out.Int":
-        # Out.Int(e, f)
+        # Out.Int(e, f)            print(f"{IntExpr()}: {IntExpr()}", end='')
+        textPy += 'print(f"{'                             //
         IntExpr()
+        textPy += '}'                             //
         skip(Lex.COMMA)
+        textPy += ': {'                             //
         IntExpr()
+        textPy += '}", end=\'\')'                             //
     elif x.name == "Out.Ln":
         textPy += 'print()'                             //
     else:
