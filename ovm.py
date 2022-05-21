@@ -30,12 +30,41 @@ MEM_SIZE = 8 * 1024
 
 M = [STOP] * MEM_SIZE
 
+_mnemo = [
+    '',
+    'STOP',
+    'ADD',
+    'SUB',
+    'MULT',
+    'DIV',
+    'MOD',
+    'NEG',
+    'LOAD',
+    'SAVE',
+    'DUP',
+    'DROP',
+    'SWAP',
+    'OVER',
+    'GOTO',
+    'IFLT',
+    'IFLE',
+    'IFGT',
+    'IFGE',
+    'IFEQ',
+    'IFNE',
+    'IN',
+    'OUT',
+    'LN'
+]
+
 
 def Run():
-    PC = 0
-    SP = MEM_SIZE
+    PC = 0               #счетчик команд
+    SP = MEM_SIZE        #указатель вершины стека
+    cnt = 0              #
     while True:
-        cmd = M[PC]
+        cnt += 1
+        cmd = M[PC]     #записываем команду
         PC += 1
         if cmd >= 0:
             SP -= 1
@@ -106,7 +135,7 @@ def Run():
             except:
                 error.Error('Неправильный ввод')
         elif cmd == OUT:
-            print(f"{M[SP] + 1}: {M[SP]}", end='')
+            print(f"{M[SP + 1]: {M[SP]}}", end='')
             SP += 2
         elif cmd == LN:
             print()
@@ -115,3 +144,11 @@ def Run():
         else:
             error.Error('Недопустимая команда')
 
+    print('Кол-во тактов: ', cnt)
+    if SP < MEM_SIZE:
+        print('Код возврата', M[SP])
+
+
+def printCode(PC):
+    for pc in range(0, PC):
+        print(pc, "| ", M[pc] if M[pc] >= 0 else _mnemo[-M[pc]])

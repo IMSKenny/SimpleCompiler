@@ -6,7 +6,7 @@ IMPORT
 
 CONST
    w = 6;
-   Max = MAX(INTEGER);
+
 
 VAR
    i, n, d: INTEGER;
@@ -14,8 +14,7 @@ VAR
 
 BEGIN
 
-   Out.Int(MIN(INTEGER), 0);
-   Out.Int(MAX(INTEGER), 0);
+
 
    n := 1000;
 

@@ -6,6 +6,12 @@ from scan import *
 import table
 import items
 import enum
+import gen
+import ovm
+
+
+textPy = ""
+n = 1
 
 
 class Types(enum.Enum):
@@ -14,7 +20,7 @@ class Types(enum.Enum):
 def indent(n):
     return ' '*4*n
 
-def lnIndent()
+def lnIndent(n):
     return '\n' + ' '*4*n
     
 def TestText():
@@ -90,16 +96,18 @@ def ConstExpr():
 
 # ОбъявлКонст = Имя "=" КонстВыраж.
 def ConstDecl():
+    global textPy, n
+
     check(Lex.NAME)
     name = scan.name()
-    textPy += name                                       //
+    textPy += name                                       #
     nextLex()
     skip(Lex.EQ)
-    textPy += ' = '                                      //
+    textPy += ' = '                                      #
     value = ConstExpr()
-    textPy += value                                      //
-    textPy += lnIndent(n)                                //
-    textPy += lnIndent(n)                                //
+    textPy += str(value)                                      #
+    #textPy += lnIndent(n)                                #
+    #textPy += lnIndent(n)                                #
     table.new(items.Const(name, Types.Int, value))
 
 
@@ -113,20 +121,22 @@ def Type():
 
 # ОбъявлПерем = Имя {"," Имя} ":" Тип.
 def VarDecl():
+    global textPy, n
+
     check(Lex.NAME)
-    textPy += lex()                                              //нужно посмотреть
+    #textPy += str(lex())                                              #нужно посмотреть
     table.new(items.Var(scan.name(), Types.Int))
     nextLex()
     while lex() == Lex.COMMA:
-        textPy += ','                                            //
+        #textPy += ','                                            #
         nextLex()
         check(Lex.NAME)
-        textPy += lex()                                          //нужно посмотреть
+        #textPy += str(lex())                                          #нужно посмотреть
         table.new(items.Var(scan.name(), Types.Int))
         nextLex()
     skip(Lex.COLON)
-    textPy += lnIndent(n)                                        //
-    textPy += lnIndent(n)                                        //
+    textPy += lnIndent(n)                                        #
+    textPy += lnIndent(n)                                        #
     Type()
 
 
@@ -151,15 +161,17 @@ def DeclSeq():
 
 # ПростоеВыраж = ["+"|"-"] Слагаемое {ОперСлож Слагаемое}.
 def SimpleExpression():
+    global textPy
+
     if lex() in {Lex.PLUS, Lex.MINUS}:
-        textPy += ' ' + lexName(lex()) + ' '                                 //
+        textPy += ' ' + lexName(lex()) + ' '                                 #
         nextLex()
         T = Term()
         TestInt(T)
     else:
         T = Term()
     while lex() in {Lex.PLUS, Lex.MINUS}:
-        textPy += ' ' + lexName(lex()) + ' '                                 //
+        textPy += ' ' + lexName(lex()) + ' '                                 #
         TestInt(T)
         nextLex()
         T = Term()
@@ -169,9 +181,11 @@ def SimpleExpression():
 
 # Слагаемое = Множитель {ОперУмн Множитель}.
 def Term():
+    global textPy
+
     T = Factor()
     while lex() in {Lex.MULT, Lex.DIV, Lex.MOD}:
-        textPy += ' ' + lexName(lex()) + ' '                                 //
+        textPy += ' ' + lexName(lex()) + ' '                                 #
         TestInt(T)
         nextLex()
         T = Factor()
@@ -184,33 +198,44 @@ def Term():
 #    | Число
 #    | "(" Выраж ")".
 def Factor():
+    global textPy, n
+
     if lex() == Lex.NAME:
         x = table.find(scan.name())
-        if type(x) in {items.Const, items.Var}:
+        if type(x) == items.Const:
+            gen.convertConst(x.value)   # значение константы
+            textPy += str(scan.name())
             nextLex()
-            textPy += x                                            //
+            return x.typ
+        elif type(x) == items.Var:   # y = x
+            gen.convertAddr(x)
+            gen.convert(ovm.LOAD)
+            textPy += str(scan.name())
+            nextLex()                                           #
             return x.typ
         elif type(x) == items.Func:
-            textPy += 'def '                                       //
-            textPy += x                                            //
+            textPy += 'def '                                       #
+            textPy += str(scan.name())                                           #
             nextLex()
             skip(Lex.LPAR)
-            textPy += '('                                          //
+            textPy += '('                                          #
             Function(x)
             skip(Lex.RPAR)
-            textPy += ')'                                          //
+            textPy += ')'                                          #
             return x.typ
         else:
             expect("имя константы, переменной или функции")
     elif lex() == Lex.NUM:
+        gen.convert(scan.num())
+        textPy += str(scan.num())
         nextLex()
         return Types.Int
     elif lex() == Lex.LPAR:
-        textPy += '('                                              //
+        textPy += '('                                              #
         nextLex()
         T = Expression()
         skip(Lex.RPAR)
-        textPy += ')'                                              //
+        textPy += ')'                                              #
         return T
     else:
         expect("имя, число или '('")
@@ -223,9 +248,11 @@ def TestInt(T):
 
 # Выраж = ПростоеВыраж [Отношение ПростоеВыраж].
 def Expression():
+    global textPy, n
+
     T = SimpleExpression()
     if lex() in {Lex.EQ, Lex.NE, Lex.GT, Lex.GE, Lex.LT, Lex.LE}:
-        textPy += ' ' + lexName(lex()) + ' '                                 //
+        textPy += ' ' + lexName(lex()) + ' '                                 #
         TestInt(T)
         nextLex()
         T = SimpleExpression()
@@ -241,11 +268,13 @@ def Parameter():
 
 # Переменная ":=" Выраж
 def AssStatement(x):
+    global textPy, n
+
     # x - переменная
     skip(Lex.NAME)
-    textPy += Lex.NAME                                     //нужно посмотреть
+    #textPy += str(lex())                                    #нужно посмотреть
     skip(Lex.ASS)
-    textPy += ' = '                                        //
+    textPy += ' = '                                        #
     T = Expression()
     if x.typ != T:
         ctxError("Несоответсвие типов при присваивании")
@@ -266,42 +295,44 @@ def Variable():
 
 
 def Procedure(x):
+    global textPy, n
+
     if x.name == "HALT":
         value = ConstExpr()
-        textPy += 'exit'                   //
+        textPy += 'exit'                   #
     elif x.name == "INC":
         # INC(v); INC(v, n)
         Variable()
-        textPy += ' += '                   //
+        textPy += ' += '                   #
         if lex() == Lex.COMMA:
             nextLex()
             IntExpr()
         else:
-            textPy += ' 1 '                //
+            textPy += ' 1 '                #
     elif x.name == "DEC":
         # DEC(v); DEC(v, n)
         Variable()
-        textPy += ' -= '                   //
+        textPy += ' -= '                   #
         if lex() == Lex.COMMA:
             nextLex()
             IntExpr()
         else:
-            textPy += ' 1 '                //
+            textPy += ' 1 '                #
     elif x.name == "In.Open":
         pass
     elif x.name == "In.Int":
         Variable()
     elif x.name == "Out.Int":
         # Out.Int(e, f)            print(f"{IntExpr()}: {IntExpr()}", end='')
-        textPy += 'print(f"{'                             //
+        textPy += 'print(f"{'                             #
         IntExpr()
-        textPy += '}'                             //
+        textPy += '}'                                     #
         skip(Lex.COMMA)
-        textPy += ': {'                             //
+        textPy += ': {'                                   #
         IntExpr()
-        textPy += '}", end=\'\')'                             //
+        textPy += '}", end=\'\')'                         #
     elif x.name == "Out.Ln":
-        textPy += 'print()'                             //
+        textPy += 'print()'                               #
     else:
         assert False
 
@@ -349,8 +380,12 @@ def CallStatement(x):
 # Переменная ":=" Выраж
 # |[Имя "."] Имя ["(" [Параметр {"," Параметр}] ")"]
 def AssOrCall():
+    global textPy, n
+
     check(Lex.NAME)
     x = table.find(scan.name())
+    if scan.name() not in {'In', 'Out'}:
+        textPy += scan.name()                                      #
     if type(x) == items.Var:
         AssStatement(x)
     elif type(x) == items.Proc or type(x) == items.Module:
@@ -367,21 +402,23 @@ def AssOrCall():
 #       ПослОператоров]
 #     END
 def IfStatement():
+    global textPy, n
+
     skip(Lex.IF)
-    textPy += 'if '              //
+    textPy += 'if '              #
     BoolExpr()
     skip(Lex.THEN)
-    textPy += ':'                //
+    textPy += ':'                #
     StatSeq()
     while lex() == Lex.ELSIF:
-        textPy += 'elif'         //
+        textPy += 'elif'         #
         nextLex()
         BoolExpr()
         skip(Lex.THEN)
-        textPy += ':'            //
+        textPy += ':'            #
         StatSeq()
     if lex() == Lex.ELSE:
-        textPy += 'else:'         //
+        textPy += 'else:'        #
         nextLex()
         StatSeq()
     skip(Lex.END)
@@ -393,20 +430,24 @@ def TestBool(T):
 
 
 def BoolExpr():
+    global textPy
+
     T = Expression()
     TestBool(T)
-    textPy += lex()               //
+    #textPy += str(lex())               #
 
 
 # WHILE Выраж DO
 #       ПослОператоров
 # END
 def WhileStatement():
+    global textPy
+
     skip(Lex.WHILE)
-    textPy += 'while '            //
+    textPy += 'while '            #
     BoolExpr()
     skip(Lex.DO)
-    textPy += ':'                 //
+    textPy += ':'                 #
     StatSeq()
     skip(Lex.END)
 
@@ -438,15 +479,17 @@ def Statement():
 #    Оператор {";"
 #    Оператор }.
 def StatSeq():
-    n += 1                              //
-    textPy += lnIndent(n)               // под вопросом
+    global textPy, n
+
+    #n += 1                              #
+    #textPy += lnIndent(n)               # под вопросом
     Statement()
     while lex() == Lex.SEMI:
-        textPy += lnIndent(n)           //
+        textPy += lnIndent(n)           #
         nextLex()
         Statement()
-    n -= 1                              //
-    textPy += lnIndent(n)               //
+    n -= 1                              #
+    textPy += lnIndent(n)               #
 
 
 # Модуль =
