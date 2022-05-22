@@ -1,7 +1,6 @@
 # Компилятор языка "О"
 import pars
 import ovm
-import scan
 import text
 import gen
 
@@ -9,13 +8,7 @@ print('-'*54)
 print('Конвертер языка "O" в язык Python.')
 print('-'*54 + '\n')
 
-def Init():
-    text.Reset()
-
-def Done():
-    pass
-
-Init()
+text.Reset()
 # pars.TestText()
 # pars.TestScan()
 pars.Compile()
@@ -29,4 +22,3 @@ print('\n')
 # ovm.M[2] = ovm.OUT
 ovm.printCode(gen.PC)
 ovm.Run()
-Done()

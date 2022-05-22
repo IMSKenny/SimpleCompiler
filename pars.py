@@ -1,6 +1,5 @@
 # Синтаксический анализатор
 
-#from text import *
 import scan
 from scan import *
 import table
@@ -363,6 +362,7 @@ def Function(x):
 # [Имя "."] Имя ["(" [Параметр {"," Параметр}] ")"]
 def CallStatement(x):
     global textPy
+    
     # x - процедура или модуль
     skip(Lex.NAME)
     if lex() == Lex.DOT:
@@ -379,7 +379,6 @@ def CallStatement(x):
         nextLex()
     elif type(x) != items.Proc:
         expect("имя процедуры")
-
     if lex() == Lex.LPAR:
         nextLex()
         Procedure(x)
@@ -397,7 +396,6 @@ def AssOrCall():
     x = table.find(scan.name())
     if scan.name() not in {'In', 'Out', 'INC', 'DEC'}:
         textPy += scan.name()
-    #textPy += scan.name()
     if type(x) == items.Var:
         AssStatement(x)
     elif type(x) == items.Proc or type(x) == items.Module:
@@ -417,30 +415,24 @@ def IfStatement():
     global textPy, ind
     textPy += lnIndent(ind)
     skip(Lex.IF)
-    textPy += 'if '              #
+    textPy += 'if '
     BoolExpr()
     skip(Lex.THEN)
-    textPy += ':'                #
+    textPy += ':'
     ind += 1
-    # textPy += lnIndent(ind)
     StatSeq()
     while lex() == Lex.ELSIF:
-        textPy += 'elif'         #
+        textPy += 'elif'
         nextLex()
         BoolExpr()
         skip(Lex.THEN)
-        textPy += ':'            #
-        #ind += 1
-        # textPy += lnIndent(ind)
+        textPy += ':'
         StatSeq()
     if lex() == Lex.ELSE:
-        textPy += 'else:'        #
-        #ind += 1
-        # textPy += lnIndent(ind)
+        textPy += 'else:'
         nextLex()
         StatSeq()
     skip(Lex.END)
-    #ind -= 1
 
 
 def TestBool(T):
@@ -453,7 +445,6 @@ def BoolExpr():
 
     T = Expression()
     TestBool(T)
-    #textPy += str(lex())               #
 
 
 # WHILE Выраж DO
@@ -463,22 +454,12 @@ def WhileStatement():
     global textPy, ind
     textPy += lnIndent(ind)
     skip(Lex.WHILE)
-    textPy += 'while '            #
+    textPy += 'while '
     BoolExpr()
-    textPy += ':'  #
+    textPy += ':'
     ind += 1
-    # print('+++++++++++++++++++++++++++++++++', ind)
-    # textPy += '++++++++++++++++++++' + str(ind)
-    # textPy += lnIndent(ind)
     skip(Lex.DO)
-
     StatSeq()
-    # ind -= 1
-
-    # if scan.name() not in {'In', 'END'}:
-    #     textPy += lnIndent(ind)
-    # else:
-    #     ind -= 1
     skip(Lex.END)
 
 
@@ -508,11 +489,6 @@ def Statement():
         IfStatement()
     elif lex() == Lex.WHILE:
         WhileStatement()
-        # if scan.name() not in {'In', 'END', 'IF', 'WHILE', 'Open'}:
-        #     textPy += '-------' + str(lex())
-        #     textPy += lnIndent(ind)
-        # else:
-        #     ind -= 1
 
 
 # ПослОператоров =
@@ -521,12 +497,8 @@ def Statement():
 def StatSeq():
     global textPy, ind
 
-    #ind += 1                              #
-    #textPy += lnIndent(n)               # под вопросом
     Statement()
     while lex() == Lex.SEMI:
-        # if scan.name() not in {'In', 'END'}:
-        #     textPy += lnIndent(ind)           #
         nextLex()
         Statement()
     if scan.name() not in {'In', 'END', 'IF', 'WHILE', 'Open'}:
@@ -545,7 +517,7 @@ def StatSeq():
 #       ПослОператоров]
 # END Имя ".".
 def Module():
-    global nameFile
+    global nameFile, module
 
     skip(Lex.MODULE)
     if lex() == Lex.NAME:
