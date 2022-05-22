@@ -3,6 +3,7 @@
 import sys
 import loc
 import error
+import pars
 
 chEOT = "\0"
 chEOL = "\n"
@@ -25,6 +26,11 @@ def Reset():
             error.Error("Ошибка открытия файла")
         _src = _f.read()
         _f.close()
+
+
+def safeFile(sf):
+    _wf = open(pars.nameFile + '.py', "w")
+    _wf.write(sf)
 
 
 def nextCh():

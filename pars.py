@@ -12,6 +12,7 @@ import ovm
 
 textPy = ""
 ind = 1
+nameFile = 'no_name'
 
 
 class Types(enum.Enum):
@@ -334,7 +335,7 @@ def Procedure(x):
         pass
     elif x.name == "In.Int":
         Variable()
-        textPy += ' = int(input(?))'
+        textPy += ' = int(input(\'?\'))'
     elif x.name == "Out.Int":
         # Out.Int(e, f)            print(f"{IntExpr()}: {IntExpr()}", end='')
         textPy += 'print(f"{'                             #
@@ -550,9 +551,12 @@ def StatSeq():
 #       ПослОператоров]
 # END Имя ".".
 def Module():
+    global nameFile
+
     skip(Lex.MODULE)
     if lex() == Lex.NAME:
         module = scan.name()  # Петров Гергий
+        nameFile = module
         table.new(items.Module(module))
         nextLex()
     else:
