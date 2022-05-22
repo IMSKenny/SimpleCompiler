@@ -330,7 +330,7 @@ def Procedure(x):
         pass
     elif x.name == "In.Int":
         Variable()
-        textPy += ' = int(input(\'Введите целое цисло: \'))'
+        textPy += ' = int(input(\'Enter integer number: \'))'
     elif x.name == "Out.Int":
         # Out.Int(e, f)            print(f"{IntExpr()}: {IntExpr()}", end='')
         textPy += 'print(f\"{'                             #
@@ -519,7 +519,7 @@ def StatSeq():
 #       ПослОператоров]
 # END Имя ".".
 def Module():
-    global nameFile, module
+    global nameFile, module, textPy
 
     skip(Lex.MODULE)
     if lex() == Lex.NAME:
@@ -537,6 +537,7 @@ def Module():
         nextLex()
         StatSeq()
     skip(Lex.END)
+    textPy += '\n'
     check(Lex.NAME)
     x = table.find(scan.name())
     if type(x) != items.Module:
