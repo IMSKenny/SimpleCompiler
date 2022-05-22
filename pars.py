@@ -1,6 +1,6 @@
 # Синтаксический анализатор
 
-from text import *
+#from text import *
 import scan
 from scan import *
 import table
@@ -106,9 +106,9 @@ def ConstDecl():
     textPy += name.upper()               #const to uppercase
     nextLex()
     skip(Lex.EQ)
-    textPy += ' = '                                      #
+    textPy += ' = '
     value = ConstExpr()
-    textPy += str(value)                                      #
+    textPy += str(value)
     textPy += lnIndent(ind)
     table.new(items.Const(name, Types.Int, value))
 
@@ -126,19 +126,14 @@ def VarDecl():
     global textPy
 
     check(Lex.NAME)
-    #textPy += str(lex())                                              #нужно посмотреть
     table.new(items.Var(scan.name(), Types.Int))
     nextLex()
     while lex() == Lex.COMMA:
-        #textPy += ','                                            #
         nextLex()
         check(Lex.NAME)
-        #textPy += str(lex())                                          #нужно посмотреть
         table.new(items.Var(scan.name(), Types.Int))
         nextLex()
     skip(Lex.COLON)
-    #textPy += lnIndent(n)                                        #
-    #textPy += lnIndent(n)                                        #
     Type()
 
 
@@ -166,14 +161,14 @@ def SimpleExpression():
     global textPy
 
     if lex() in {Lex.PLUS, Lex.MINUS}:
-        textPy += ' ' + lexName(lex()) + ' '                                 #
+        textPy += ' ' + lexName(lex()) + ' '
         nextLex()
         T = Term()
         TestInt(T)
     else:
         T = Term()
     while lex() in {Lex.PLUS, Lex.MINUS}:
-        textPy += ' ' + lexName(lex()) + ' '                                 #
+        textPy += ' ' + lexName(lex()) + ' '
         TestInt(T)
         nextLex()
         T = Term()
@@ -190,7 +185,7 @@ def Term():
         if lex() == Lex.MOD:
             textPy += ' % '
         else:
-            textPy += ' ' + lexName(lex()) + ' '                                 #
+            textPy += ' ' + lexName(lex()) + ' '
         TestInt(T)
         nextLex()
         T = Factor()
@@ -216,17 +211,17 @@ def Factor():
             gen.convertAddr(x)
             gen.convert(ovm.LOAD)
             textPy += str(scan.name())
-            nextLex()                                           #
+            nextLex()
             return x.typ
         elif type(x) == items.Func:
-            textPy += 'def '                                       #
-            textPy += str(scan.name())                                           #
+            textPy += 'def '
+            textPy += str(scan.name())
             nextLex()
             skip(Lex.LPAR)
-            textPy += '('                                          #
+            textPy += '('
             Function(x)
             skip(Lex.RPAR)
-            textPy += ')'                                          #
+            textPy += ')'
             return x.typ
         else:
             expect("имя константы, переменной или функции")
@@ -236,11 +231,11 @@ def Factor():
         nextLex()
         return Types.Int
     elif lex() == Lex.LPAR:
-        textPy += '('                                              #
+        textPy += '('
         nextLex()
         T = Expression()
         skip(Lex.RPAR)
-        textPy += ')'                                              #
+        textPy += ')'
         return T
     else:
         expect("имя, число или '('")
@@ -262,7 +257,7 @@ def Expression():
         elif lex() == Lex.NE:
             textPy += ' != '
         else:
-            textPy += ' ' + lexName(lex()) + ' '                                 #
+            textPy += ' ' + lexName(lex()) + ' '
         TestInt(T)
         nextLex()
         T = SimpleExpression()
@@ -282,9 +277,8 @@ def AssStatement(x):
 
     # x - переменная
     skip(Lex.NAME)
-    #textPy += str(lex())                                    #нужно посмотреть
     skip(Lex.ASS)
-    textPy += ' = '                                        #
+    textPy += ' = '
     T = Expression()
     if x.typ != T:
         ctxError("Несоответсвие типов при присваивании")
@@ -312,25 +306,25 @@ def Procedure(x):
 
     if x.name == "HALT":
         value = ConstExpr()
-        textPy += 'exit'                   #
+        textPy += 'exit'
     elif x.name == "INC":
         # INC(v); INC(v, n)
         Variable()
-        textPy += ' += '                   #
+        textPy += ' += '
         if lex() == Lex.COMMA:
             nextLex()
             IntExpr()
         else:
-            textPy += '1'                #
+            textPy += '1'
     elif x.name == "DEC":
         # DEC(v); DEC(v, n)
         Variable()
-        textPy += ' -= '                   #
+        textPy += ' -= '
         if lex() == Lex.COMMA:
             nextLex()
             IntExpr()
         else:
-            textPy += '1'                #
+            textPy += '1'
     elif x.name == "In.Open":
         pass
     elif x.name == "In.Int":

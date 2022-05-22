@@ -5,7 +5,9 @@ import scan
 import text
 import gen
 
-print('Компилятор языка "O"')
+print('-'*54)
+print('Конвертер языка "O" в язык Python.')
+print('-'*54 + '\n')
 
 def Init():
     text.Reset()
@@ -18,9 +20,10 @@ Init()
 # pars.TestScan()
 pars.Compile()
 # print(pars.textPy)
-print("Компиляция завершена")
+print("Конвертация завершена.")
 text.safeFile(pars.textPy)
-print("Результат записан в файл: ", pars.nameFile, '.py')
+print("Результат записан в файл: ", pars.nameFile + '.py')
+print('\n')
 # ovm.M[0] = 100
 # ovm.M[1] = 10
 # ovm.M[2] = ovm.OUT
