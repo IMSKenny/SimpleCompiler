@@ -1,23 +1,16 @@
 MODULE Primes;
 
-
 IMPORT
    Out, In;
 
 CONST
    w = 6;
 
-
 VAR
    i, n, d: INTEGER;
-   x, c: INTEGER;
+   x, y, c: INTEGER;
 
 BEGIN
-
-
-
-   n := 1000;
-
    In.Open;
    In.Int(n);
 
@@ -29,12 +22,10 @@ BEGIN
           d := d + 1;
       END;
       IF d = i THEN
-
          IF c MOD w = 0 THEN
-            Out.Ln();
+            Out.Ln;
          END;
          Out.Int(i, w);
-
          INC(c);
       END;
       i := i + 1;

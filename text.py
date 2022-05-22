@@ -37,7 +37,7 @@ def nextCh():
     global _src, _i, _ch
     if _i < len(_src):
         _ch = _src[_i]
-        #print(_ch, end="")
+        # print(_ch, end="")
         loc.pos += 1
         _i += 1
         if _ch in {'\n', '\r'}:

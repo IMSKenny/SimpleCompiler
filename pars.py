@@ -183,8 +183,10 @@ def Term():
     while lex() in {Lex.MULT, Lex.DIV, Lex.MOD}:
         if lex() == Lex.MOD:
             textPy += ' % '
+        elif lex() == Lex.DIV:
+            textPy += ' // '
         else:
-            textPy += ' ' + lexName(lex()) + ' '
+            textPy += ' * '
         TestInt(T)
         nextLex()
         T = Factor()
@@ -328,18 +330,17 @@ def Procedure(x):
         pass
     elif x.name == "In.Int":
         Variable()
-        textPy += ' = int(input(\'?\'))'
+        textPy += ' = int(input(\'Введите целое цисло: \'))'
     elif x.name == "Out.Int":
         # Out.Int(e, f)            print(f"{IntExpr()}: {IntExpr()}", end='')
-        textPy += 'print(f"{'                             #
-        IntExpr()
-        textPy += '}'                                     #
+        textPy += 'print(f\"{'                             #
+        IntExpr()                                    #
         skip(Lex.COMMA)
         textPy += ': {'                                   #
         IntExpr()
-        textPy += '}", end=\'\')'                         #
-    elif x.name == "Out.Ln":
-        textPy += 'print()'                               #
+        textPy += '}}\", end=\'\')'                         #
+    elif x.name in {"Out.Ln", "Out.Ln()"}:
+        pass                             #
     else:
         assert False
 
@@ -362,7 +363,7 @@ def Function(x):
 # [Имя "."] Имя ["(" [Параметр {"," Параметр}] ")"]
 def CallStatement(x):
     global textPy
-    
+
     # x - процедура или модуль
     skip(Lex.NAME)
     if lex() == Lex.DOT:
@@ -371,6 +372,8 @@ def CallStatement(x):
         nextLex()
         check(Lex.NAME)
         key = x.name + '.' + scan.name()
+        if key == 'Out.Ln':
+            textPy += 'print()'
         if key == 'In.Int':
             textPy += lnIndent(ind)
         x = table.find(key)
@@ -502,7 +505,6 @@ def StatSeq():
         nextLex()
         Statement()
     if scan.name() not in {'In', 'END', 'IF', 'WHILE', 'Open'}:
-        textPy += '-------' + str(lex())
         textPy += lnIndent(ind)
     else:
         ind -= 1
