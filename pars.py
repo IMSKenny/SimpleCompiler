@@ -11,19 +11,19 @@ import ovm
 
 
 textPy = ""
-n = 1
+ind = 1
 
 
 class Types(enum.Enum):
     Bool, Int = range(2)
 
-def indent(n):
-    return ' '*4*n
+def indent(ind):
+    return ' '*4*ind
 
-def lnIndent(n):
-    if n == 1:
+def lnIndent(ind):
+    if ind == 1:
         return '\n'
-    return '\n' + ' '*4*(n - 1)
+    return '\n' + ' '*4*(ind - 1)
     
 def TestText():
     while ch() != chEOT:
@@ -98,18 +98,17 @@ def ConstExpr():
 
 # ОбъявлКонст = Имя "=" КонстВыраж.
 def ConstDecl():
-    global textPy, n
+    global textPy, ind
 
     check(Lex.NAME)
     name = scan.name()
-    textPy += name                                       #
+    textPy += name.upper()               #const to uppercase
     nextLex()
     skip(Lex.EQ)
     textPy += ' = '                                      #
     value = ConstExpr()
     textPy += str(value)                                      #
-    #textPy += lnIndent(n)                                #
-    #textPy += lnIndent(n)                                #
+    textPy += lnIndent(ind)
     table.new(items.Const(name, Types.Int, value))
 
 
@@ -123,7 +122,7 @@ def Type():
 
 # ОбъявлПерем = Имя {"," Имя} ":" Тип.
 def VarDecl():
-    global textPy, n
+    global textPy
 
     check(Lex.NAME)
     #textPy += str(lex())                                              #нужно посмотреть
@@ -187,7 +186,10 @@ def Term():
 
     T = Factor()
     while lex() in {Lex.MULT, Lex.DIV, Lex.MOD}:
-        textPy += ' ' + lexName(lex()) + ' '                                 #
+        if lex() == Lex.MOD:
+            textPy += ' % '
+        else:
+            textPy += ' ' + lexName(lex()) + ' '                                 #
         TestInt(T)
         nextLex()
         T = Factor()
@@ -200,13 +202,13 @@ def Term():
 #    | Число
 #    | "(" Выраж ")".
 def Factor():
-    global textPy, n
+    global textPy
 
     if lex() == Lex.NAME:
         x = table.find(scan.name())
         if type(x) == items.Const:
             gen.convertConst(x.value)   # значение константы
-            textPy += str(scan.name())
+            textPy += str(scan.name()).upper()
             nextLex()
             return x.typ
         elif type(x) == items.Var:   # y = x
@@ -254,7 +256,12 @@ def Expression():
 
     T = SimpleExpression()
     if lex() in {Lex.EQ, Lex.NE, Lex.GT, Lex.GE, Lex.LT, Lex.LE}:
-        textPy += ' ' + lexName(lex()) + ' '                                 #
+        if lex() == Lex.EQ:
+            textPy += ' == '
+        elif lex() == Lex.NE:
+            textPy += ' != '
+        else:
+            textPy += ' ' + lexName(lex()) + ' '                                 #
         TestInt(T)
         nextLex()
         T = SimpleExpression()
@@ -270,7 +277,7 @@ def Parameter():
 
 # Переменная ":=" Выраж
 def AssStatement(x):
-    global textPy, n
+    global textPy
 
     # x - переменная
     skip(Lex.NAME)
@@ -289,15 +296,18 @@ def IntExpr():
 
 
 def Variable():
+    global textPy
+
     check(Lex.NAME)
     v = table.find(scan.name())
     if type(v) != items.Var:
         expect("имя переменной")
+    textPy += scan.name()
     nextLex()
 
 
 def Procedure(x):
-    global textPy, n
+    global textPy
 
     if x.name == "HALT":
         value = ConstExpr()
@@ -310,7 +320,7 @@ def Procedure(x):
             nextLex()
             IntExpr()
         else:
-            textPy += ' 1 '                #
+            textPy += '1'                #
     elif x.name == "DEC":
         # DEC(v); DEC(v, n)
         Variable()
@@ -319,11 +329,12 @@ def Procedure(x):
             nextLex()
             IntExpr()
         else:
-            textPy += ' 1 '                #
+            textPy += '1'                #
     elif x.name == "In.Open":
         pass
     elif x.name == "In.Int":
         Variable()
+        textPy += ' = int(input(?))'
     elif x.name == "Out.Int":
         # Out.Int(e, f)            print(f"{IntExpr()}: {IntExpr()}", end='')
         textPy += 'print(f"{'                             #
@@ -356,6 +367,7 @@ def Function(x):
 
 # [Имя "."] Имя ["(" [Параметр {"," Параметр}] ")"]
 def CallStatement(x):
+    global textPy
     # x - процедура или модуль
     skip(Lex.NAME)
     if lex() == Lex.DOT:
@@ -364,6 +376,8 @@ def CallStatement(x):
         nextLex()
         check(Lex.NAME)
         key = x.name + '.' + scan.name()
+        if key == 'In.Int':
+            textPy += lnIndent(ind)
         x = table.find(key)
         if type(x) != items.Proc:
             expect("процедура")
@@ -382,12 +396,13 @@ def CallStatement(x):
 # Переменная ":=" Выраж
 # |[Имя "."] Имя ["(" [Параметр {"," Параметр}] ")"]
 def AssOrCall():
-    global textPy, n
+    global textPy
 
     check(Lex.NAME)
     x = table.find(scan.name())
-    if scan.name() not in {'In', 'Out'}:
-        textPy += scan.name()                                      #
+    if scan.name() not in {'In', 'Out', 'INC', 'DEC'}:
+        textPy += scan.name()
+    #textPy += scan.name()
     if type(x) == items.Var:
         AssStatement(x)
     elif type(x) == items.Proc or type(x) == items.Module:
@@ -404,15 +419,15 @@ def AssOrCall():
 #       ПослОператоров]
 #     END
 def IfStatement():
-    global textPy, n
-
+    global textPy, ind
+    textPy += lnIndent(ind)
     skip(Lex.IF)
     textPy += 'if '              #
     BoolExpr()
     skip(Lex.THEN)
     textPy += ':'                #
-    n += 1
-    textPy += lnIndent(n)
+    ind += 1
+    # textPy += lnIndent(ind)
     StatSeq()
     while lex() == Lex.ELSIF:
         textPy += 'elif'         #
@@ -420,16 +435,17 @@ def IfStatement():
         BoolExpr()
         skip(Lex.THEN)
         textPy += ':'            #
-        n += 1
-        #textPy += lnIndent(n)
+        #ind += 1
+        # textPy += lnIndent(ind)
         StatSeq()
     if lex() == Lex.ELSE:
         textPy += 'else:'        #
-        n += 1
-        #textPy += lnIndent(n)
+        #ind += 1
+        # textPy += lnIndent(ind)
         nextLex()
         StatSeq()
     skip(Lex.END)
+    #ind -= 1
 
 
 def TestBool(T):
@@ -449,17 +465,27 @@ def BoolExpr():
 #       ПослОператоров
 # END
 def WhileStatement():
-    global textPy, n
-
+    global textPy, ind
+    textPy += lnIndent(ind)
     skip(Lex.WHILE)
     textPy += 'while '            #
     BoolExpr()
+    textPy += ':'  #
+    ind += 1
+    # print('+++++++++++++++++++++++++++++++++', ind)
+    # textPy += '++++++++++++++++++++' + str(ind)
+    # textPy += lnIndent(ind)
     skip(Lex.DO)
-    textPy += ':'                 #
-    n += 1
-    textPy += lnIndent(n)
+
     StatSeq()
+    # ind -= 1
+
+    # if scan.name() not in {'In', 'END'}:
+    #     textPy += lnIndent(ind)
+    # else:
+    #     ind -= 1
     skip(Lex.END)
+
 
 
 # Оператор = [
@@ -477,29 +503,43 @@ def WhileStatement():
 #     END
 # ].
 def Statement():
+    global textPy, ind
+
     if lex() == Lex.NAME:
+        if scan.name() not in {'In', 'END', 'IF', 'WHILE', 'Open'}:
+            textPy += lnIndent(ind)
         AssOrCall()
     elif lex() == Lex.IF:
         IfStatement()
     elif lex() == Lex.WHILE:
         WhileStatement()
+        # if scan.name() not in {'In', 'END', 'IF', 'WHILE', 'Open'}:
+        #     textPy += '-------' + str(lex())
+        #     textPy += lnIndent(ind)
+        # else:
+        #     ind -= 1
 
 
 # ПослОператоров =
 #    Оператор {";"
 #    Оператор }.
 def StatSeq():
-    global textPy, n
+    global textPy, ind
 
-    #n += 1                              #
+    #ind += 1                              #
     #textPy += lnIndent(n)               # под вопросом
     Statement()
     while lex() == Lex.SEMI:
-        textPy += lnIndent(n)           #
+        # if scan.name() not in {'In', 'END'}:
+        #     textPy += lnIndent(ind)           #
         nextLex()
         Statement()
-    n -= 1                              #
-    #textPy += lnIndent(n)               #
+    if scan.name() not in {'In', 'END', 'IF', 'WHILE', 'Open'}:
+        textPy += '-------' + str(lex())
+        textPy += lnIndent(ind)
+    else:
+        ind -= 1
+
 
 
 # Модуль =
