@@ -5,6 +5,7 @@ from scan import *
 import table
 import items
 import enum
+from gen import *
 import gen
 import ovm
 
@@ -191,6 +192,12 @@ def Term():
         nextLex()
         T = Factor()
         TestInt(T)
+        if Op == Lex.DIV:
+            Gen(ovm.DIV)
+        elif Op == Lex.MULT:
+            Gen(ovm.MULT)
+        else:
+            Gen(ovm.MOD)
     return T
 
 
@@ -204,13 +211,13 @@ def Factor():
     if lex() == Lex.NAME:
         x = table.find(scan.name())
         if type(x) == items.Const:
-            gen.convertConst(x.value)   # значение константы
+            GenConst(x.value)   # значение константы
             textPy += str(scan.name()).upper()
             nextLex()
             return x.typ
         elif type(x) == items.Var:   # y = x
-            gen.convertAddr(x)
-            gen.convert(ovm.LOAD)
+            GenAddr(x)
+            Gen(ovm.LOAD)
             textPy += str(scan.name())
             nextLex()
             return x.typ
@@ -259,10 +266,12 @@ def Expression():
             textPy += ' != '
         else:
             textPy += ' ' + lexName(lex()) + ' '
+        op = lex()
         TestInt(T)
         nextLex()
         T = SimpleExpression()
         TestInt(T)
+        GenComp(op)
         return Types.Bool
     else:
         return T
@@ -277,12 +286,14 @@ def AssStatement(x):
     global textPy
 
     # x - переменная
+    GenAddr(x)
     skip(Lex.NAME)
     skip(Lex.ASS)
     textPy += ' = '
     T = Expression()
     if x.typ != T:
         ctxError("Несоответсвие типов при присваивании")
+    Gen(ovm.SAVE)
 
 
 def IntExpr():
@@ -299,6 +310,7 @@ def Variable():
     if type(v) != items.Var:
         expect("имя переменной")
     textPy += scan.name()
+    GenAddr(v)
     nextLex()
 
 
@@ -307,55 +319,85 @@ def Procedure(x):
 
     if x.name == "HALT":
         value = ConstExpr()
+        GenConst(value)
+        Gen(ovm.STOP)
         textPy += 'exit'
     elif x.name == "INC":
         # INC(v); INC(v, n)
         Variable()
+        Gen(ovm.DUP)
+        Gen(ovm.LOAD)
         textPy += ' += '
         if lex() == Lex.COMMA:
             nextLex()
             IntExpr()
         else:
             textPy += '1'
+            Gen(1)
+        Gen(ovm.ADD)
+        Gen(ovm.SAVE)
     elif x.name == "DEC":
         # DEC(v); DEC(v, n)
         Variable()
+        Gen(ovm.DUP)
+        Gen(ovm.LOAD)
         textPy += ' -= '
         if lex() == Lex.COMMA:
             nextLex()
             IntExpr()
         else:
             textPy += '1'
+            Gen(1)
+        Gen(ovm.SUB)
+        Gen(ovm.SAVE)
     elif x.name == "In.Open":
         pass
     elif x.name == "In.Int":
         Variable()
+        Gen(ovm.IN)
+        Gen(ovm.SAVE)
         textPy += ' = int(input(\'Enter integer number: \'))'
     elif x.name == "Out.Int":
         # Out.Int(e, f)            print(f"{IntExpr()}: {IntExpr()}", end='')
-        textPy += 'print(f\"{'                             #
-        IntExpr()                                    #
+        textPy += 'print(f\"{'                             
+        IntExpr()                                    
         skip(Lex.COMMA)
-        textPy += ': {'                                   #
+        textPy += ': {'                                   
         IntExpr()
-        textPy += '}}\", end=\'\')'                         #
+        Gen(ovm.OUT)
+        textPy += '}}\", end=\'\')'                         
     elif x.name in {"Out.Ln", "Out.Ln()"}:
-        pass                             #
+        Gen(ovm.LN)                         
     else:
         assert False
 
 
 def Function(x):
     if x.name == "ABS":
-        IntExpr()
+        IntExpr()       # x
+        Gen(ovm.DUP)    # x, x
+        Gen(0)          # x, x, 0
+        Gen(gen.PC + 3) # x, x, 0, A
+        Gen(ovm.IFGE)
+        Gen(ovm.NEG)
     elif x.name == "MIN":
         # MIN(INTEGER)
         Type()
+        Gen(MAXINT)
+        Gen(ovm.NEG)
+        Gen(1)
+        Gen(ovm.SUB)
     elif x.name == "MAX":
         # MAX(INTEGER)
         Type()
+        Gen(MAXINT)
     elif x.name == "ODD":
-        IntExpr()
+        IntExpr()    # x
+        Gen(2)       # x, 2
+        Gen(ovm.MOD) # x MOD 2
+        Gen(0)       # x MOD 2, 0
+        Gen(0)       # x MOD 2, 0, 0 - фиктивный адрес перехода
+        Gen(ovm.IFEQ)
     else:
         assert False
 
@@ -386,6 +428,8 @@ def CallStatement(x):
         nextLex()
         Procedure(x)
         skip(Lex.RPAR)
+    elif x.name == 'Out.Ln':
+        Gen(ovm.LN)
     elif x.name not in {"Out.Ln", "In.Open"}:
         expect("Out.Ln или In.Open")
 
