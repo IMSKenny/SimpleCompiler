@@ -234,7 +234,7 @@ def Factor():
         else:
             expect("имя константы, переменной или функции")
     elif lex() == Lex.NUM:
-        gen.convert(scan.num())
+        Gen(scan.num())
         textPy += str(scan.num())
         nextLex()
         return Types.Int
@@ -464,22 +464,37 @@ def IfStatement():
     skip(Lex.IF)
     textPy += 'if '
     BoolExpr()
+    CondPC = gen.PC
+    LastGOTO = 0
     skip(Lex.THEN)
     textPy += ':'
     ind += 1
     StatSeq()
     while lex() == Lex.ELSIF:
+        Gen(LastGOTO)
+        Gen(ovm.GOTO)
+        LastGOTO = gen.PC
+        fixup(CondPC, gen.PC)
         textPy += 'elif'
         nextLex()
         BoolExpr()
+        CondPC = gen.PC
         skip(Lex.THEN)
         textPy += ':'
         StatSeq()
     if lex() == Lex.ELSE:
+        Gen(LastGOTO)
+        Gen(ovm.GOTO)
+        LastGOTO = gen.PC 
+        ovm.printCode(gen.PC)
+        fixup(CondPC, gen.PC)
         textPy += 'else:'
         nextLex()
         StatSeq()
+    else:
+        fixup(CondPC, gen.PC)
     skip(Lex.END)
+    fixup(LastGOTO, gen.PC)
 
 
 def TestBool(T):
@@ -499,15 +514,21 @@ def BoolExpr():
 # END
 def WhileStatement():
     global textPy, ind
+    
+    WhilePC = gen.PC
     textPy += lnIndent(ind)
     skip(Lex.WHILE)
     textPy += 'while '
     BoolExpr()
+    CondPC = gen.PC
     textPy += ':'
     ind += 1
     skip(Lex.DO)
     StatSeq()
     skip(Lex.END)
+    Gen(WhilePC)
+    Gen(ovm.GOTO)
+    fixup(CondPC, gen.PC)
 
 
 
@@ -590,6 +611,18 @@ def Module():
         expect("имя модуля " + module)
     nextLex()
     skip(Lex.DOT)
+    Gen(ovm.STOP)
+    AllocVars()
+    
+    
+def AllocVars():
+    vars = table.getVars()
+    for v in vars:
+        if v.addr > 0:
+            fixup(v.addr, gen.PC)
+            Gen(0)
+        else:
+            error.Warning("Переменная " + v.name + "объявлена, но не используется")
 
 
 def Compile():
