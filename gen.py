@@ -6,25 +6,26 @@ from scan import Lex
 
 PC = 0  # Счетчик команд времени компиляции
 
-def convert(cmd):
+def Gen(cmd):
     global PC
 
     ovm.M[PC] = cmd
     PC += 1
 
 
-def convertConst(c):
-    convert(abs(c))
+def GenConst(c):
+    Gen(abs(c))
     if c < 0:
-        convert(ovm.NEG)
+        Gen(ovm.NEG)
 
         
-def convertAddr(v):
-    convert(100)
+def GentAddr(v):
+    Gen(v.addr)
+    v.addr = PC + 1
 
     
-def convertComp(op):
-    convert(0)
+def GenComp(op):
+    Gen(0)
     if op == Lex.EQ:
         Gen(ovm.IFNE)
     elif op == Lex.NE:
