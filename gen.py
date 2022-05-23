@@ -1,6 +1,8 @@
 # Генератор кода
 
 import ovm
+from scan import Lex
+
 
 PC = 0  # Счетчик команд времени компиляции
 
@@ -16,5 +18,29 @@ def convertConst(c):
     if c < 0:
         convert(ovm.NEG)
 
+        
 def convertAddr(v):
     convert(100)
+
+    
+def convertComp(op):
+    convert(0)
+    if op == Lex.EQ:
+        Gen(ovm.IFNE)
+    elif op == Lex.NE:
+        Gen(ovm.IFEQ)
+    elif op == Lex.GE:
+        Gen(ovm.IFLT)
+    elif op == Lex.GT:
+        Gen(ovm.IFLE)
+    elif op == Lex.LE:
+        Gen(ovm.IFGT)
+    elif op == Lex.LT:
+        Gen(ovm.IFGE)
+        
+        
+def fixup(A, PC):
+    while A > 0:
+        temp = ovm.M[A - 2]
+        ovm.M[A - 2] = PC
+        A = temp        
