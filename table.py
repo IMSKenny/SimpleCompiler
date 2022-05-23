@@ -1,6 +1,7 @@
 # Таблица имен
 
 import error
+import items
 
 _table = []
 
@@ -28,4 +29,11 @@ def find(name):
     error.ctxError("Необъявленное имя")
 
 
+def getVars():
+    vars = []
+    lastBlock = _table[-1]
+    for item in lastBlock.values():
+        if type(item) == items.Var:
+            vars.append(item)
+    return vars
 
