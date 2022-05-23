@@ -321,7 +321,7 @@ def Procedure(x):
         value = ConstExpr()
         GenConst(value)
         Gen(ovm.STOP)
-        textPy += 'exit'
+        textPy += 'exit' + str(value)
     elif x.name == "INC":
         # INC(v); INC(v, n)
         Variable()
@@ -374,7 +374,9 @@ def Procedure(x):
 
 def Function(x):
     if x.name == "ABS":
+        textPy += '('
         IntExpr()       # x
+        textPy += 'x**2)**0.5'
         Gen(ovm.DUP)    # x, x
         Gen(0)          # x, x, 0
         Gen(gen.PC + 3) # x, x, 0, A
@@ -392,7 +394,9 @@ def Function(x):
         Type()
         Gen(MAXINT)
     elif x.name == "ODD":
+        textPy += 'bool('
         IntExpr()    # x
+        textPy += ' % 2)'
         Gen(2)       # x, 2
         Gen(ovm.MOD) # x MOD 2
         Gen(0)       # x MOD 2, 0
