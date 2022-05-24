@@ -1,5 +1,6 @@
 # Синтаксический анализатор
 
+from text import *
 import scan
 from scan import *
 import table
@@ -7,7 +8,6 @@ import items
 import enum
 from gen import *
 import gen
-import ovm
 
 
 textPy = ""
@@ -75,6 +75,7 @@ def Import():
     skip(Lex.SEMI)
 
 
+
 # КонстВыраж = ["+" | "-"] (Число | Имя).
 def ConstExpr():
     sign = 1
@@ -123,8 +124,6 @@ def Type():
 
 # ОбъявлПерем = Имя {"," Имя} ":" Тип.
 def VarDecl():
-    global textPy
-
     check(Lex.NAME)
     table.new(items.Var(scan.name(), Types.Int))
     nextLex()
@@ -162,17 +161,25 @@ def SimpleExpression():
 
     if lex() in {Lex.PLUS, Lex.MINUS}:
         textPy += ' ' + lexName(lex()) + ' '
+        op = lex()
         nextLex()
         T = Term()
         TestInt(T)
+        if op == Lex.MINUS:
+            Gen(cm.NEG)
     else:
         T = Term()
     while lex() in {Lex.PLUS, Lex.MINUS}:
         textPy += ' ' + lexName(lex()) + ' '
+        op = lex()
         TestInt(T)
         nextLex()
         T = Term()
         TestInt(T)
+        if op == Lex.PLUS:
+            Gen(cm.ADD)
+        else:
+            Gen(cm.SUB)
     return T
 
 
@@ -188,16 +195,17 @@ def Term():
             textPy += ' // '
         else:
             textPy += ' * '
+        Op = lex()
         TestInt(T)
         nextLex()
         T = Factor()
         TestInt(T)
         if Op == Lex.DIV:
-            Gen(ovm.DIV)
+            Gen(cm.DIV)
         elif Op == Lex.MULT:
-            Gen(ovm.MULT)
+            Gen(cm.MULT)
         else:
-            Gen(ovm.MOD)
+            Gen(cm.MOD)
     return T
 
 
@@ -217,7 +225,7 @@ def Factor():
             return x.typ
         elif type(x) == items.Var:   # y = x
             GenAddr(x)
-            Gen(ovm.LOAD)
+            Gen(cm.LOAD)
             textPy += str(scan.name())
             nextLex()
             return x.typ
@@ -293,7 +301,7 @@ def AssStatement(x):
     T = Expression()
     if x.typ != T:
         ctxError("Несоответсвие типов при присваивании")
-    Gen(ovm.SAVE)
+    Gen(cm.SAVE)
 
 
 def IntExpr():
@@ -320,13 +328,13 @@ def Procedure(x):
     if x.name == "HALT":
         value = ConstExpr()
         GenConst(value)
-        Gen(ovm.STOP)
+        Gen(cm.STOP)
         textPy += 'exit' + str(value)
     elif x.name == "INC":
         # INC(v); INC(v, n)
         Variable()
-        Gen(ovm.DUP)
-        Gen(ovm.LOAD)
+        Gen(cm.DUP)
+        Gen(cm.LOAD)
         textPy += ' += '
         if lex() == Lex.COMMA:
             nextLex()
@@ -334,13 +342,13 @@ def Procedure(x):
         else:
             textPy += '1'
             Gen(1)
-        Gen(ovm.ADD)
-        Gen(ovm.SAVE)
+        Gen(cm.ADD)
+        Gen(cm.SAVE)
     elif x.name == "DEC":
         # DEC(v); DEC(v, n)
         Variable()
-        Gen(ovm.DUP)
-        Gen(ovm.LOAD)
+        Gen(cm.DUP)
+        Gen(cm.LOAD)
         textPy += ' -= '
         if lex() == Lex.COMMA:
             nextLex()
@@ -348,14 +356,14 @@ def Procedure(x):
         else:
             textPy += '1'
             Gen(1)
-        Gen(ovm.SUB)
-        Gen(ovm.SAVE)
+        Gen(cm.SUB)
+        Gen(cm.SAVE)
     elif x.name == "In.Open":
         pass
     elif x.name == "In.Int":
         Variable()
-        Gen(ovm.IN)
-        Gen(ovm.SAVE)
+        Gen(cm.IN)
+        Gen(cm.SAVE)
         textPy += ' = int(input(\'Enter integer number: \'))'
     elif x.name == "Out.Int":
         # Out.Int(e, f)            print(f"{IntExpr()}: {IntExpr()}", end='')
@@ -364,10 +372,10 @@ def Procedure(x):
         skip(Lex.COMMA)
         textPy += ': {'                                   
         IntExpr()
-        Gen(ovm.OUT)
+        Gen(cm.OUT)
         textPy += '}}\", end=\'\')'                         
     elif x.name in {"Out.Ln", "Out.Ln()"}:
-        Gen(ovm.LN)                         
+        Gen(cm.LN)                       
     else:
         assert False
 
@@ -377,18 +385,18 @@ def Function(x):
         textPy += '('
         IntExpr()       # x
         textPy += 'x**2)**0.5'
-        Gen(ovm.DUP)    # x, x
+        Gen(cm.DUP)    # x, x
         Gen(0)          # x, x, 0
         Gen(gen.PC + 3) # x, x, 0, A
-        Gen(ovm.IFGE)
-        Gen(ovm.NEG)
+        Gen(cm.IFGE)
+        Gen(cm.NEG)
     elif x.name == "MIN":
         # MIN(INTEGER)
         Type()
         Gen(MAXINT)
-        Gen(ovm.NEG)
+        Gen(cm.NEG)
         Gen(1)
-        Gen(ovm.SUB)
+        Gen(cm.SUB)
     elif x.name == "MAX":
         # MAX(INTEGER)
         Type()
@@ -398,10 +406,10 @@ def Function(x):
         IntExpr()    # x
         textPy += ' % 2)'
         Gen(2)       # x, 2
-        Gen(ovm.MOD) # x MOD 2
+        Gen(cm.MOD) # x MOD 2
         Gen(0)       # x MOD 2, 0
         Gen(0)       # x MOD 2, 0, 0 - фиктивный адрес перехода
-        Gen(ovm.IFEQ)
+        Gen(cm.IFEQ)
     else:
         assert False
 
@@ -433,7 +441,7 @@ def CallStatement(x):
         Procedure(x)
         skip(Lex.RPAR)
     elif x.name == 'Out.Ln':
-        Gen(ovm.LN)
+        Gen(cm.LN)
     elif x.name not in {"Out.Ln", "In.Open"}:
         expect("Out.Ln или In.Open")
 
@@ -464,6 +472,7 @@ def AssOrCall():
 #     END
 def IfStatement():
     global textPy, ind
+    
     textPy += lnIndent(ind)
     skip(Lex.IF)
     textPy += 'if '
@@ -476,7 +485,7 @@ def IfStatement():
     StatSeq()
     while lex() == Lex.ELSIF:
         Gen(LastGOTO)
-        Gen(ovm.GOTO)
+        Gen(cm.GOTO)
         LastGOTO = gen.PC
         fixup(CondPC, gen.PC)
         textPy += 'elif'
@@ -488,7 +497,7 @@ def IfStatement():
         StatSeq()
     if lex() == Lex.ELSE:
         Gen(LastGOTO)
-        Gen(ovm.GOTO)
+        Gen(cm.GOTO)
         LastGOTO = gen.PC 
         ovm.printCode(gen.PC)
         fixup(CondPC, gen.PC)
@@ -507,8 +516,6 @@ def TestBool(T):
 
 
 def BoolExpr():
-    global textPy
-
     T = Expression()
     TestBool(T)
 
@@ -531,7 +538,7 @@ def WhileStatement():
     StatSeq()
     skip(Lex.END)
     Gen(WhilePC)
-    Gen(ovm.GOTO)
+    Gen(cm.GOTO)
     fixup(CondPC, gen.PC)
 
 
@@ -615,7 +622,7 @@ def Module():
         expect("имя модуля " + module)
     nextLex()
     skip(Lex.DOT)
-    Gen(ovm.STOP)
+    Gen(cm.STOP)
     AllocVars()
     
     
