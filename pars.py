@@ -381,6 +381,8 @@ def Procedure(x):
 
 
 def Function(x):
+    global textPy
+    
     if x.name == "ABS":
         textPy += '('
         IntExpr()       # x
@@ -393,6 +395,8 @@ def Function(x):
     elif x.name == "MIN":
         # MIN(INTEGER)
         Type()
+        textPy = 'def minint():\n' + ' '*4 + 'return -2147483648\n' + textPy
+        textPy += minint()
         Gen(MAXINT)
         Gen(cm.NEG)
         Gen(1)
@@ -400,6 +404,8 @@ def Function(x):
     elif x.name == "MAX":
         # MAX(INTEGER)
         Type()
+        textPy = 'def maxint():\n' + ' '*4 + 'return 2147483647\n' + textPy
+        textPy += maxint()
         Gen(MAXINT)
     elif x.name == "ODD":
         textPy += 'bool('
