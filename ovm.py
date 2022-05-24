@@ -31,40 +31,40 @@ MEM_SIZE = 8 * 1024
 M = [STOP] * MEM_SIZE
 
 _mnemo = [
-    '',
-    'STOP',
-    'ADD',
-    'SUB',
-    'MULT',
-    'DIV',
-    'MOD',
-    'NEG',
-    'LOAD',
-    'SAVE',
-    'DUP',
-    'DROP',
-    'SWAP',
-    'OVER',
-    'GOTO',
-    'IFLT',
-    'IFLE',
-    'IFGT',
-    'IFGE',
-    'IFEQ',
-    'IFNE',
-    'IN',
-    'OUT',
-    'LN'
+    "",
+    "STOP",
+    "ADD",
+    "SUB",
+    "MULT",
+    "DIV",
+    "MOD",
+    "NEG",
+    "LOAD",
+    "SAVE",
+    "DUP",
+    "DROP",
+    "SWAP",
+    "OVER",
+    "GOTO",
+    "IFLT",
+    "IFLE",
+    "IFGT",
+    "IFGE",
+    "IFEQ",
+    "IFNE",
+    "IN",
+    "OUT",
+    "LN"
 ]
 
 
 def Run():
-    PC = 0               #счетчик команд
-    SP = MEM_SIZE        #указатель вершины стека
-    cnt = 0              #
+    PC = 0
+    SP = MEM_SIZE
+    cnt = 0
     while True:
         cnt += 1
-        cmd = M[PC]     #записываем команду
+        cmd = M[PC]
         PC += 1
         if cmd >= 0:
             SP -= 1
@@ -97,7 +97,9 @@ def Run():
         elif cmd == DROP:
             SP += 1
         elif cmd == SWAP:
-            M[SP], M[SP + 1] = M[SP + 1], M[SP]
+            temp = M[SP]
+            M[SP] = M[SP + 1]
+            M[SP + 1] = temp
         elif cmd == OVER:
             SP -= 1
             M[SP] = M[SP + 2]
@@ -131,24 +133,24 @@ def Run():
         elif cmd == IN:
             SP -= 1
             try:
-                M[SP] = int(input('?'))
+                M[SP] = int(input("?"))
             except:
-                error.Error('Неправильный ввод')
+                error.Error("Неправильный ввод")
         elif cmd == OUT:
-            print(f"{M[SP + 1]: {M[SP]}}", end='')
+            print(f"{M[SP + 1]:{M[SP]}}", end="")
             SP += 2
         elif cmd == LN:
             print()
         elif cmd == STOP:
-            break
+            break;
         else:
-            error.Error('Недопустимая команда')
+            error.Error("Недопустимая команда")
 
-    print('Кол-во тактов: ', cnt)
+    print("\nКоличество тактов", cnt)
     if SP < MEM_SIZE:
-        print('Код возврата', M[SP])
+        print("Код возврата", M[SP])
 
 
 def printCode(PC):
     for pc in range(0, PC):
-        print(pc, "| ", M[pc] if M[pc] >= 0 else _mnemo[-M[pc]])
+        print(pc, ') ', M[pc] if M[pc] >= 0 else _mnemo[-M[pc]])
