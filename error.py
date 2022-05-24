@@ -23,3 +23,7 @@ def Error(msg):
     print()
     print(msg)
     exit(2)
+
+def Warning(msg):
+    print()
+    print(msg)
