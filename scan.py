@@ -97,7 +97,7 @@ def scanIdent():
 
 def scanNumber():
     global _num, _lex
-    _num = 0;
+    _num = 0
     while ch() in string.digits:
         # _num = 10 * _num + int(ch())
         if _num <= (MAXINT - int(ch())) // 10:

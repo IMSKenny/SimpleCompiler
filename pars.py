@@ -10,6 +10,39 @@ from gen import *
 import gen
 
 
+keyWordNotUse = 0
+_keyWord = {
+    'and': keyWordNotUse,
+    'del': keyWordNotUse,
+    'for': keyWordNotUse,
+    'is': keyWordNotUse,
+    'raise': keyWordNotUse,
+    'assert': keyWordNotUse,
+    'elif': keyWordNotUse,
+    'from': keyWordNotUse,
+    'lambda': keyWordNotUse,
+    'return': keyWordNotUse,
+    'break': keyWordNotUse,
+    'else': keyWordNotUse,
+    'global': keyWordNotUse,
+    'not': keyWordNotUse,
+    'try': keyWordNotUse,
+    'class': keyWordNotUse,
+    'except': keyWordNotUse,
+    'if': keyWordNotUse,
+    'or': keyWordNotUse,
+    'while': keyWordNotUse,
+    'continue': keyWordNotUse,
+    'exec': keyWordNotUse,
+    'import': keyWordNotUse,
+    'pass': keyWordNotUse,
+    'yield': keyWordNotUse,
+    'def': keyWordNotUse,
+    'nally': keyWordNotUse,
+    'in': keyWordNotUse,
+    'print': keyWordNotUse
+}
+
 textPy = ""
 ind = 1
 nameFile = 'no_name'
@@ -104,7 +137,10 @@ def ConstDecl():
 
     check(Lex.NAME)
     name = scan.name()
-    textPy += name.upper()               #const to uppercase
+    if name in _keyWord:
+        Error('Нельзя использовать \'' + scan.name() + '\': зарезервированное слово.')
+    else:
+        textPy += name.upper()               #const to uppercase
     nextLex()
     skip(Lex.EQ)
     textPy += ' = '
@@ -126,11 +162,15 @@ def Type():
 def VarDecl():
     check(Lex.NAME)
     table.new(items.Var(scan.name(), Types.Int))
+    if scan.name() in _keyWord:
+        Error('Нельзя использовать \'' + scan.name() + '\': зарезервированное слово.')
     nextLex()
     while lex() == Lex.COMMA:
         nextLex()
         check(Lex.NAME)
         table.new(items.Var(scan.name(), Types.Int))
+        if scan.name() in _keyWord:
+            Error('Нельзя использовать \'' + scan.name() + '\': зарезервированное слово.')
         nextLex()
     skip(Lex.COLON)
     Type()
@@ -230,14 +270,14 @@ def Factor():
             nextLex()
             return x.typ
         elif type(x) == items.Func:
-            textPy += 'def '
-            textPy += str(scan.name())
+            # textPy += 'def '
+            # textPy += str(scan.name())
             nextLex()
             skip(Lex.LPAR)
-            textPy += '('
+            # textPy += '('
             Function(x)
             skip(Lex.RPAR)
-            textPy += ')'
+            # textPy += ')'
             return x.typ
         else:
             expect("имя константы, переменной или функции")
@@ -317,7 +357,10 @@ def Variable():
     v = table.find(scan.name())
     if type(v) != items.Var:
         expect("имя переменной")
-    textPy += scan.name()
+    if scan.name() in _keyWord:
+        Error('Нельзя использовать \'' + scan.name() + '\': зарезервированное слово.')
+    else:
+        textPy += scan.name()
     GenAddr(v)
     nextLex()
 
@@ -329,7 +372,8 @@ def Procedure(x):
         value = ConstExpr()
         GenConst(value)
         Gen(cm.STOP)
-        textPy += 'exit' + str(value)
+        textPy = textPy[:-4]
+        textPy += 'exit(' + str(value) + ')'
     elif x.name == "INC":
         # INC(v); INC(v, n)
         Variable()
@@ -386,7 +430,7 @@ def Function(x):
     if x.name == "ABS":
         textPy += '('
         IntExpr()       # x
-        textPy += 'x**2)**0.5'
+        textPy += '**2)**0.5'
         Gen(cm.DUP)    # x, x
         Gen(0)          # x, x, 0
         Gen(gen.PC + 3) # x, x, 0, A
@@ -396,7 +440,7 @@ def Function(x):
         # MIN(INTEGER)
         Type()
         textPy = 'def minint():\n' + ' '*4 + 'return -2147483648\n' + textPy
-        textPy += minint()
+        textPy += "minint()"
         Gen(MAXINT)
         Gen(cm.NEG)
         Gen(1)
@@ -405,7 +449,7 @@ def Function(x):
         # MAX(INTEGER)
         Type()
         textPy = 'def maxint():\n' + ' '*4 + 'return 2147483647\n' + textPy
-        textPy += maxint()
+        textPy += "maxint()"
         Gen(MAXINT)
     elif x.name == "ODD":
         textPy += 'bool('
@@ -490,24 +534,30 @@ def IfStatement():
     ind += 1
     StatSeq()
     while lex() == Lex.ELSIF:
+        ind -= 1
         Gen(LastGOTO)
         Gen(cm.GOTO)
         LastGOTO = gen.PC
         fixup(CondPC, gen.PC)
-        textPy += 'elif'
+        textPy = textPy[:-4]
+        textPy += 'elif '
         nextLex()
         BoolExpr()
         CondPC = gen.PC
         skip(Lex.THEN)
         textPy += ':'
+        ind += 1
         StatSeq()
     if lex() == Lex.ELSE:
+        ind -= 1
         Gen(LastGOTO)
         Gen(cm.GOTO)
         LastGOTO = gen.PC 
         ovm.printCode(gen.PC)
         fixup(CondPC, gen.PC)
+        textPy = textPy[:-4]
         textPy += 'else:'
+        ind += 1
         nextLex()
         StatSeq()
     else:
@@ -639,7 +689,7 @@ def AllocVars():
             fixup(v.addr, gen.PC)
             Gen(0)
         else:
-            error.Warning("Переменная " + v.name + "объявлена, но не используется")
+            error.Warning("Переменная " + v.name + " объявлена, но не используется")
 
 
 def Compile():

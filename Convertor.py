@@ -20,5 +20,5 @@ print('\n')
 # ovm.M[0] = 100
 # ovm.M[1] = 10
 # ovm.M[2] = ovm.OUT
-ovm.printCode(gen.PC)
+# ovm.printCode(gen.PC)
 ovm.Run()

@@ -8,11 +8,12 @@ CONST
 
 VAR
    i, n, d: INTEGER;
-   x, y, c: INTEGER;
+   x, y, c, def: INTEGER;
 
 BEGIN
    In.Open;
    In.Int(n);
+
 
    c := 0;
    i := 2;
