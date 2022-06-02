@@ -138,9 +138,10 @@ def ConstDecl():
     check(Lex.NAME)
     name = scan.name()
     if name in _keyWord:
-        Error('Нельзя использовать \'' + scan.name() + '\': зарезервированное слово.')
+        textPy += name.upper()
+        # Error('Нельзя использовать \'' + scan.name() + '\': зарезервированное слово.')
     else:
-        textPy += name.upper()               #const to uppercase
+        textPy += name.upper()            #const to uppercase
     nextLex()
     skip(Lex.EQ)
     textPy += ' = '
@@ -162,15 +163,15 @@ def Type():
 def VarDecl():
     check(Lex.NAME)
     table.new(items.Var(scan.name(), Types.Int))
-    if scan.name() in _keyWord:
-        Error('Нельзя использовать \'' + scan.name() + '\': зарезервированное слово.')
+    # if scan.name() in _keyWord:
+        # Error('Нельзя использовать \'' + scan.name() + '\': зарезервированное слово.')
     nextLex()
     while lex() == Lex.COMMA:
         nextLex()
         check(Lex.NAME)
         table.new(items.Var(scan.name(), Types.Int))
-        if scan.name() in _keyWord:
-            Error('Нельзя использовать \'' + scan.name() + '\': зарезервированное слово.')
+        # if scan.name() in _keyWord:
+            # Error('Нельзя использовать \'' + scan.name() + '\': зарезервированное слово.')
         nextLex()
     skip(Lex.COLON)
     Type()
@@ -266,7 +267,10 @@ def Factor():
         elif type(x) == items.Var:   # y = x
             GenAddr(x)
             Gen(cm.LOAD)
-            textPy += str(scan.name())
+            if scan.name() in _keyWord:
+                textPy += str(scan.name()) + '_'
+            else:
+                textPy += str(scan.name())
             nextLex()
             return x.typ
         elif type(x) == items.Func:
@@ -358,7 +362,8 @@ def Variable():
     if type(v) != items.Var:
         expect("имя переменной")
     if scan.name() in _keyWord:
-        Error('Нельзя использовать \'' + scan.name() + '\': зарезервированное слово.')
+        textPy += scan.name() + '_'
+        # Error('Нельзя использовать \'' + scan.name() + '\': зарезервированное слово.')
     else:
         textPy += scan.name()
     GenAddr(v)
@@ -408,7 +413,7 @@ def Procedure(x):
         Variable()
         Gen(cm.IN)
         Gen(cm.SAVE)
-        textPy += ' = int(input(\'Enter integer number: \'))'
+        textPy += ' = int(input(\'?\'))'
     elif x.name == "Out.Int":
         # Out.Int(e, f)            print(f"{IntExpr()}: {IntExpr()}", end='')
         textPy += 'print(f\"{'                             
@@ -504,7 +509,10 @@ def AssOrCall():
     check(Lex.NAME)
     x = table.find(scan.name())
     if scan.name() not in {'In', 'Out', 'INC', 'DEC'}:
-        textPy += scan.name()
+        if scan.name() in _keyWord:
+            textPy += scan.name() + '_'
+        else:
+            textPy += scan.name()
     if type(x) == items.Var:
         AssStatement(x)
     elif type(x) == items.Proc or type(x) == items.Module:
